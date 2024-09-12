@@ -16,7 +16,7 @@ import TaskComponent from "./components/Task";
 import Empty from "./components/Empty";
 
 const { width } = Dimensions.get("window");
-const backgroundHeight = 162; // Height of the background rectangle
+const backgroundHeight = 200; // Height of the background rectangle
 
 export default function App() {
   const [currentDateTime, setCurrentDateTime] = useState("");
@@ -26,6 +26,7 @@ export default function App() {
   const [isEditing, setIsEditing] = useState(false);
   const [editingIndex, setEditingIndex] = useState(null);
   const [charCount, setCharCount] = useState(0); // New state for character count
+  const [searchQuery, setSearchQuery] = useState(""); // New state for search query
 
   useEffect(() => {
     const updateDateTime = () => {
@@ -103,24 +104,37 @@ export default function App() {
     }
   };
 
+  // Filter tasks based on search query
+  const filteredTasks = taskItems.filter((item) =>
+    item.text.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
   return (
     <View style={styles.container}>
       <StatusBar style="auto" />
       <View style={styles.backgroundRect}>
         <Text style={styles.sectionTitle}>To-do List</Text>
         <Text style={styles.sectionTimestamp}>{currentDateTime}</Text>
+
+        {/* Search Bar */}
+        <TextInput
+          style={styles.searchBar}
+          placeholder="Search here"
+          value={searchQuery}
+          onChangeText={(text) => setSearchQuery(text)}
+        />
       </View>
 
-      <View style={styles.container}>
-        {taskItems.length === 0 ? (
+      <View style={styles.taskListContainer}>
+        {filteredTasks.length === 0 ? (
           <Empty />
         ) : (
           <ScrollView contentContainerStyle={styles.scrollContainer}>
-            {taskItems.map((item, index) => (
+            {filteredTasks.map((item, index) => (
               <TouchableOpacity
                 key={index}
-                onPress={() => editTask(index)}
-                onLongPress={() => confirmDeleteTask(index)}
+                onPress={() => editTask(index)} // Open edit view on click
+                onLongPress={() => confirmDeleteTask(index)} // Confirm delete on long press
                 style={styles.taskContainer}
               >
                 <TaskComponent
@@ -195,9 +209,7 @@ const styles = StyleSheet.create({
   },
 
   backgroundRect: {
-    position: "absolute",
-    top: 0,
-    left: 0,
+    position: "relative", // Make it relative to position children absolutely
     width: width,
     height: backgroundHeight,
     backgroundColor: "#0058D4",
@@ -211,16 +223,34 @@ const styles = StyleSheet.create({
     fontSize: 32,
     fontWeight: "bold",
     color: "#FFFFFF",
+    top: -50,
   },
 
   sectionTimestamp: {
     fontSize: 13,
     color: "#FFFFFF",
-    marginTop: 2,
+    marginTop: -50,
+  },
+
+  searchBar: {
+    position: "absolute",
+    top: 140,
+    left: "58%", // Position from the center of the container
+    width: "100%", // Set the width of the search bar
+    backgroundColor: "#FFFFFF",
+    padding: 8,
+    fontSize: 14,
+    borderRadius: 10,
+    transform: [{ translateX: -width * 0.4 }], // Offset by half of the width
+  },
+
+  taskListContainer: {
+    flex: 1,
+    marginTop: 20, // Adjust to start below background and search bar
   },
 
   scrollContainer: {
-    paddingTop: backgroundHeight + 20,
+    paddingBottom: 20,
   },
 
   taskContainer: {
@@ -249,9 +279,9 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     padding: 15,
     borderRadius: 40,
-    flexDirection: "column", // Changed to column to center content vertically
+    flexDirection: "column",
     alignItems: "center",
-    justifyContent: "center", // Center content vertically
+    justifyContent: "center",
   },
 
   closeButtonWrapper: {
@@ -276,7 +306,7 @@ const styles = StyleSheet.create({
   inputWrapper: {
     width: "100%",
     alignItems: "center",
-    justifyContent: "center", // Center the input vertically
+    justifyContent: "center",
   },
 
   input: {
@@ -288,7 +318,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     width: "95%",
     maxHeight: 120, // Adjusted for scrolling
-    textAlignVertical: "top", // Align text to the top of the input box
+    textAlignVertical: "top",
     top: -70,
   },
 

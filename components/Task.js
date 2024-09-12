@@ -39,7 +39,7 @@ const TaskComponent = (props) => {
 const styles = StyleSheet.create({
   item: {
     backgroundColor: "#FFFFFF",
-    padding: 15,
+    padding: 13,
     borderRadius: 10,
     flexDirection: "row",
     alignItems: "center",
@@ -47,8 +47,9 @@ const styles = StyleSheet.create({
     marginBottom: 0,
     borderColor: "#EEEEEE",
     borderWidth: 1,
-    width: 320,
-    height: 53,
+    width: '95%',
+    height: 50,
+    left:8,
     alignSelf: "center",
   },
 
@@ -64,7 +65,7 @@ const styles = StyleSheet.create({
   },
 
   itemText: {
-    fontSize: 16,
+    fontSize: 15,
     flexShrink: 1, // Allows text to shrink if necessary
   },
 

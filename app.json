@@ -4,10 +4,10 @@
     "slug": "Activity1",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/TaskNote.png",
+    "icon": "./assets/logo.png",
     "userInterfaceStyle": "light",
     "splash": {
-      "image": "./assets/TaskNote.png",
+      "image": "./assets/logo.png",
       "resizeMode": "contain",
       "backgroundColor": "#ffffff"
     },
@@ -16,12 +16,18 @@
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/TaskNote.png",
+        "foregroundImage": "./assets/logo.png",
         "backgroundColor": "#ffffff"
-      }
+      },
+      "package": "com.alaiza_olores.Activity1"
     },
     "web": {
-      "favicon": "./assets/TaskNote.png"
+      "favicon": "./assets/logo.png"
+    },
+    "extra": {
+      "eas": {
+        "projectId": "1a07b7c2-6a39-4a17-b823-18f2cea70090"
+      }
     }
   }
 }

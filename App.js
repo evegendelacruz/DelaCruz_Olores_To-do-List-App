@@ -1,110 +1,52 @@
-import React, { useState, useEffect } from "react";
-import { StatusBar } from "expo-status-bar";
+import React, { useState } from "react"; // Import React and useState for managing state
+import { StatusBar } from "expo-status-bar"; // Expo's status bar component
 import {
   StyleSheet,
   Text,
   View,
-  Dimensions,
-  KeyboardAvoidingView,
   TextInput,
-  Platform,
   TouchableOpacity,
-  Alert,
   ScrollView,
-} from "react-native";
-import TaskComponent from "./components/Task";
-import Empty from "./components/Empty";
+} from "react-native"; // Core React Native components
+import { NavigationContainer } from "@react-navigation/native"; // Navigation container for managing screens
+import { createStackNavigator } from "@react-navigation/stack"; // Stack navigator for screen navigation
+import TaskComponent from "./components/Task"; // Custom task component
+import Empty from "./components/Empty"; // Custom empty state component
 
-const { width } = Dimensions.get("window");
-const backgroundHeight = 200; // Height of the background rectangle
+const Stack = createStackNavigator(); // Create a stack navigator instance
 
-export default function App() {
-  const [currentDateTime, setCurrentDateTime] = useState("");
-  const [task, setTask] = useState("");
-  const [taskItems, setTaskItems] = useState([]);
-  const [isTaskInputVisible, setIsTaskInputVisible] = useState(false);
-  const [isEditing, setIsEditing] = useState(false);
-  const [editingIndex, setEditingIndex] = useState(null);
-  const [charCount, setCharCount] = useState(0); // New state for character count
-  const [searchQuery, setSearchQuery] = useState(""); // New state for search query
+// Home screen for managing tasks
+const HomeScreen = ({ navigation }) => {
+  const [task, setTask] = useState(""); // State for new task input
+  const [taskItems, setTaskItems] = useState([]); // State for storing task list
+  const [searchQuery, setSearchQuery] = useState(""); // State for search input
 
-  useEffect(() => {
-    const updateDateTime = () => {
-      const now = new Date();
-      const options = {
-        weekday: "long",
-        year: "numeric",
-        month: "long",
-        day: "numeric",
-      };
-      setCurrentDateTime(now.toLocaleDateString("en-US", options));
-    };
-
-    updateDateTime();
-    const intervalId = setInterval(updateDateTime, 1000 * 60);
-
-    return () => clearInterval(intervalId);
-  }, []);
-
+  // Add a new task to the list
   const handleAddTask = () => {
     if (task.length > 0) {
-      if (isEditing) {
-        let itemsCopy = [...taskItems];
-        itemsCopy[editingIndex].text = task;
-        setTaskItems(itemsCopy);
-        setIsEditing(false);
-        setEditingIndex(null);
-      } else {
-        setTaskItems([...taskItems, { text: task, completed: false }]);
-      }
-      setTask("");
-      setCharCount(0); // Reset character count
-      setIsTaskInputVisible(false);
+      setTaskItems([...taskItems, { text: task, completed: false }]);
+      setTask(""); // Clear the input field
     }
   };
 
+  // Mark a task as completed or incomplete
   const completeTask = (index) => {
     let itemsCopy = [...taskItems];
-    itemsCopy[index].completed = !itemsCopy[index].completed;
+    itemsCopy[index] = {
+      ...itemsCopy[index], // Spread the existing task properties
+      completed: !itemsCopy[index].completed, // Toggle the `completed` property
+    };
     setTaskItems(itemsCopy);
   };
 
-  const confirmDeleteTask = (index) => {
-    Alert.alert(
-      "Delete Task",
-      "Are you sure you want to delete this task?",
-      [
-        { text: "Cancel", style: "cancel" },
-        { text: "Yes", onPress: () => deleteTask(index) },
-      ],
-      { cancelable: true }
-    );
-  };
-
+  // Delete a task from the list
   const deleteTask = (index) => {
     let itemsCopy = [...taskItems];
     itemsCopy.splice(index, 1);
     setTaskItems(itemsCopy);
   };
 
-  const editTask = (index) => {
-    setTask(taskItems[index].text);
-    setCharCount(taskItems[index].text.length); // Set initial character count for editing
-    setIsTaskInputVisible(true);
-    setIsEditing(true);
-    setEditingIndex(index);
-  };
-
-  const toggleTaskInput = () => {
-    setIsTaskInputVisible(!isTaskInputVisible);
-    if (!isTaskInputVisible) {
-      setIsEditing(false);
-      setTask("");
-      setCharCount(0); // Reset character count when input is hidden
-    }
-  };
-
-  // Filter tasks based on search query
+  // Filter tasks based on the search query
   const filteredTasks = taskItems.filter((item) =>
     item.text.toLowerCase().includes(searchQuery.toLowerCase())
   );
@@ -112,253 +54,173 @@ export default function App() {
   return (
     <View style={styles.container}>
       <StatusBar style="auto" />
-      <View style={styles.backgroundRect}>
-        <Text style={styles.sectionTitle}>To-do List</Text>
-        <Text style={styles.sectionTimestamp}>{currentDateTime}</Text>
+      <Text style={styles.title}>To-Do List</Text>
 
-        {/* Search Bar */}
-        <TextInput
-          style={styles.searchBar}
-          placeholder="Search here"
-          value={searchQuery}
-          onChangeText={(text) => setSearchQuery(text)}
-        />
-      </View>
+      {/* Search Bar */}
+      <TextInput
+        style={styles.searchBar}
+        placeholder="Search here"
+        value={searchQuery}
+        onChangeText={(text) => setSearchQuery(text)}
+      />
 
-      <View style={styles.taskListContainer}>
+      {/* Task List */}
+      <ScrollView style={styles.scrollView}>
         {filteredTasks.length === 0 ? (
           <Empty />
         ) : (
-          <ScrollView contentContainerStyle={styles.scrollContainer}>
-            {filteredTasks.map((item, index) => (
-              <TouchableOpacity
-                key={index}
-                onPress={() => editTask(index)} // Open edit view on click
-                onLongPress={() => confirmDeleteTask(index)} // Confirm delete on long press
-                style={styles.taskContainer}
-              >
-                <TaskComponent
-                  text={item.text}
-                  completed={item.completed}
-                  onPress={() => completeTask(index)}
-                />
-              </TouchableOpacity>
-            ))}
-          </ScrollView>
+          filteredTasks.map((item, index) => (
+            <TouchableOpacity
+              key={index}
+              onPress={() => completeTask(index)}
+              onLongPress={() => deleteTask(index)}
+            >
+              <TaskComponent
+                text={item.text}
+                completed={item.completed}
+                onPress={() => completeTask(index)}
+              />
+            </TouchableOpacity>
+          ))
         )}
+      </ScrollView>
+
+      {/* Add Task Input */}
+      <View style={styles.addTaskContainer}>
+        <TextInput
+          style={styles.input}
+          placeholder="Write a task"
+          value={task}
+          onChangeText={(text) => setTask(text)}
+        />
+        <TouchableOpacity onPress={handleAddTask} style={styles.addButton}>
+          <Text style={styles.addButtonText}>+</Text>
+        </TouchableOpacity>
       </View>
 
-      {!isTaskInputVisible && (
-        <TouchableOpacity onPress={toggleTaskInput} style={styles.addWrapper}>
-          <Text style={styles.addText}>+</Text>
-        </TouchableOpacity>
-      )}
-
-      {isTaskInputVisible && (
-        <KeyboardAvoidingView
-          behavior={Platform.OS === "ios" ? "padding" : "height"}
-          style={styles.writeTaskWrapper}
-        >
-          <View style={styles.taskInputContainer}>
-            <TouchableOpacity
-              onPress={toggleTaskInput}
-              style={styles.closeButtonWrapper}
-            >
-              <Text style={styles.closeButton}>x</Text>
-              <Text style={styles.addTitle}>
-                {isEditing ? "Edit to-do" : "New to-do"}
-              </Text>
-            </TouchableOpacity>
-
-            <View style={styles.inputWrapper}>
-              <TextInput
-                style={styles.input}
-                placeholder={"Write here"}
-                value={task}
-                onChangeText={(text) => {
-                  if (text.length <= 90) {
-                    setTask(text);
-                    setCharCount(text.length); // Update character count
-                  }
-                }}
-                autoFocus={true}
-                multiline={true}
-              />
-              <Text style={styles.charCount}>{charCount}/90</Text>
-            </View>
-
-            <TouchableOpacity
-              onPress={handleAddTask}
-              style={styles.saveButtonWrapper}
-            >
-              <Text style={styles.saveButton}>
-                {isEditing ? "Update" : "Save"}
-              </Text>
-            </TouchableOpacity>
-          </View>
-        </KeyboardAvoidingView>
-      )}
+      {/* Navigate to Completed Tasks */}
+      <TouchableOpacity
+        onPress={() =>
+          navigation.navigate("CompletedTasks", { taskItems: taskItems })
+        }
+        style={styles.completedButton}
+      >
+        <Text style={styles.completedButtonText}>View Completed Tasks</Text>
+      </TouchableOpacity>
     </View>
+  );
+};
+
+// Completed Tasks screen
+const CompletedTasksScreen = ({ route }) => {
+  const { taskItems } = route.params; // Get task data from navigation route
+  const completedTasks = taskItems.filter((task) => task.completed); // Filter completed tasks
+
+  return (
+    <View style={styles.completedContainer}>
+      <Text style={styles.title}>Completed Tasks</Text>
+      <ScrollView style={styles.scrollView}>
+        {completedTasks.length === 0 ? (
+          <Text style={styles.emptyText}>No completed tasks yet!</Text>
+        ) : (
+          completedTasks.map((item, index) => (
+            <View key={index} style={styles.completedTask}>
+              <Text style={styles.completedTaskText}>{item.text}</Text>
+            </View>
+          ))
+        )}
+      </ScrollView>
+    </View>
+  );
+};
+
+// Main App component
+export default function App() {
+  return (
+    <NavigationContainer>
+      <Stack.Navigator initialRouteName="Home">
+        <Stack.Screen name="Home" component={HomeScreen} />
+        <Stack.Screen
+          name="CompletedTasks"
+          component={CompletedTasksScreen}
+          options={{ title: "Completed Tasks" }}
+        />
+      </Stack.Navigator>
+    </NavigationContainer>
   );
 }
 
+// Style definitions for the app
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#E9E9E9",
+    backgroundColor: "#E9E9E9", // Light gray background
+    padding: 20, // Space around the content
   },
-
-  backgroundRect: {
-    position: "relative", // Make it relative to position children absolutely
-    width: width,
-    height: backgroundHeight,
-    backgroundColor: "#0058D4",
-    paddingHorizontal: 30,
-    paddingTop: 49,
-    justifyContent: "center",
-    zIndex: 1,
-  },
-
-  sectionTitle: {
-    fontSize: 32,
-    fontWeight: "bold",
-    color: "#FFFFFF",
-    top: -50,
-  },
-
-  sectionTimestamp: {
-    fontSize: 13,
-    color: "#FFFFFF",
-    marginTop: -50,
-  },
-
-  searchBar: {
-    position: "absolute",
-    top: 140,
-    left: "58%", // Position from the center of the container
-    width: "100%", // Set the width of the search bar
-    backgroundColor: "#FFFFFF",
-    padding: 8,
-    fontSize: 14,
-    borderRadius: 10,
-    transform: [{ translateX: -width * 0.4 }], // Offset by half of the width
-  },
-
-  taskListContainer: {
+  completedContainer: {
     flex: 1,
-    marginTop: 20, // Adjust to start below background and search bar
+    backgroundColor: "#dce9f5", // Light blue background
+    padding: 20, // Space around the content
   },
-
-  scrollContainer: {
-    paddingBottom: 20,
+  title: {
+    fontSize: 24, // Large text
+    fontWeight: "bold", // Bold font
+    marginBottom: 10, // Space below
   },
-
-  taskContainer: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 20,
-    paddingHorizontal: 20,
+  searchBar: {
+    backgroundColor: "#FFF", // White background
+    borderRadius: 10, // Rounded corners
+    padding: 10, // Inner padding
+    marginBottom: 10, // Space below
   },
-
-  writeTaskWrapper: {
-    position: "absolute",
-    bottom: 10,
-    width: "100%",
-    flexDirection: "row",
-    justifyContent: "center",
-    alignItems: "center",
+  scrollView: {
+    flex: 1,
+    marginBottom: 20, // Space below
   },
-
-  taskInputContainer: {
-    position: "absolute",
-    width: width,
-    height: 300,
-    backgroundColor: "#0058D4",
-    borderColor: "#E9E9E9",
-    borderWidth: 1,
-    padding: 15,
-    borderRadius: 40,
-    flexDirection: "column",
-    alignItems: "center",
-    justifyContent: "center",
+  addTaskContainer: {
+    flexDirection: "row", // Horizontal layout
+    alignItems: "center", // Center items vertically
+    marginVertical: 10, // Space above and below
   },
-
-  closeButtonWrapper: {
-    position: "absolute",
-    top: 10,
-    left: 30,
-    borderRadius: 100,
-  },
-
-  closeButton: {
-    fontSize: 18,
-    color: "#FFFFFF",
-  },
-
-  addTitle: {
-    left: 30,
-    top: -22,
-    fontSize: 16,
-    color: "#FFFFFF",
-  },
-
-  inputWrapper: {
-    width: "100%",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-
   input: {
-    paddingVertical: 15,
-    paddingHorizontal: 10,
-    backgroundColor: "#FFFFFF",
-    borderRadius: 20,
-    borderColor: "#EEEEEE",
-    borderWidth: 1,
-    width: "95%",
-    maxHeight: 120, // Adjusted for scrolling
-    textAlignVertical: "top",
-    top: -70,
+    flex: 1, // Take up remaining space
+    backgroundColor: "#FFF", // White background
+    borderRadius: 10, // Rounded corners
+    padding: 10, // Inner padding
+    marginRight: 10, // Space to the right
   },
-
-  charCount: {
-    position: "absolute",
-    top: -23,
-    right: 19,
-    color: "#888888",
-    fontSize: 10,
+  addButton: {
+    backgroundColor: "#0058D4", // Blue background
+    borderRadius: 10, // Rounded corners
+    padding: 10, // Inner padding
   },
-
-  saveButton: {
-    fontSize: 16,
-    color: "#FFFFFF",
+  addButtonText: {
+    color: "#FFF", // White text
+    fontSize: 18, // Large font
   },
-
-  saveButtonWrapper: {
-    position: "absolute",
-    right: 30,
-    top: 113,
-    borderRadius: 100,
-    padding: 10,
+  completedButton: {
+    backgroundColor: "#0058D4", // Blue background
+    padding: 10, // Inner padding
+    borderRadius: 10, // Rounded corners
+    alignItems: "center", // Center text
+    marginVertical: 10, // Space above and below
   },
-
-  addWrapper: {
-    position: "absolute",
-    bottom: 40,
-    right: 30,
-    width: 60,
-    height: 60,
-    backgroundColor: "#FFFFFF",
-    borderRadius: 100,
-    borderColor: "#EEEEEE",
-    borderWidth: 1,
-    justifyContent: "center",
-    alignItems: "center",
+  completedButtonText: {
+    color: "#FFF", // White text
+    fontSize: 16, // Medium font
   },
-
-  addText: {
-    fontSize: 24,
-    color: "#0058D4",
+  completedTask: {
+    backgroundColor: "#a8c8f0", // Light blue background for completed tasks
+    padding: 10, // Inner padding
+    marginBottom: 10, // Space below
+    borderRadius: 5, // Rounded corners
+  },
+  completedTaskText: {
+    fontSize: 16, // Medium font
+    color: "#003366", // Darker blue text
+  },
+  emptyText: {
+    textAlign: "center", // Center text
+    color: "#666", // Gray text
   },
 });
